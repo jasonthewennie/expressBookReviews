@@ -11,22 +11,20 @@ app.use(express.json());
 app.use("/customer",session({secret:"fingerprint_customer",resave: true, saveUninitialized: true}))
 
 app.use("/customer/auth/*", function auth(req,res,next){
-    const authHeeader = req.headers['authorization'];
-    const token = authHeeader && authHeeader.split(' ')[1];
-
-    if(!token){
-        return res.status(401).jason({ message: 'Acess token not found'});
-    }
-
-    try{
-        const decoded = jwt.verify(token, ' ');
-
-        req.user = decoded;
-
-        next();
-    } catch (err) {
-        return res.status(403).jason({message: 'Invalid access token'})
-    }
+    if(req.session.authorization) {
+        token = req.session.authorization['accessToken'];
+        jwt.verify(token, "access",(err,user)=>{
+            if(!err){
+                req.user = user;
+                next();
+            }
+            else{
+                return res.status(403).json({message: "User not authenticated"})
+            }
+         });
+     } else {
+         return res.status(403).json({message: "User not logged in"})
+     }
 });
  
 const PORT =5000;
